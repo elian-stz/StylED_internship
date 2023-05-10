@@ -27,6 +27,7 @@ def main() :
 		print("./xml_2_fasta.py --i <XML file> --o <fasta file>")
 		print("e.g.: ./xml_2_fasta.py --i blast_results.xml --o blast_sequences.fasta")
 	elif len(sys.argv) == 5 :
-		converter(sys.argv[2], sys.argv[4])	
-
-main()
+		converter(sys.argv[2], sys.argv[4])
+		
+if__name__== "__main__" :
+	main()
