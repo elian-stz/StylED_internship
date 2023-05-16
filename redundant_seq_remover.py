@@ -10,8 +10,8 @@ from Bio import SeqIO
 import sys
 
 def parser(istream, ostream) :
-    seen = set()
-    records = []
+    seen = set() # contains all sequences seen
+    records = [] # contains all SeqIO objects whose sequences are not seen
     with open(istream, "r") as file :
         for record in SeqIO.parse(file, "fasta") :
             if record.seq not in seen :
@@ -21,7 +21,7 @@ def parser(istream, ostream) :
 
 def main() :
     if len(sys.argv) != 5 :
-        print("Parse a multifasta file and removes redundant sequences")
+        print("Parse a multifasta file and remove redundant sequences")
         print("Input: a fasta file")
         print("Output: a fasta file")
         print("To use this script, type:")
