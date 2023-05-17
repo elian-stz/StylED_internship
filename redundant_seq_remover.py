@@ -28,6 +28,7 @@ def main() :
         print("python3 redundant_seq_remover.py --i <fasta_file_to_clean> --o <fasta_file_cleaned>")
     else :
         parser(sys.argv[2], sys.argv[4])
+        print("Cleaning done.")
 
 if __name__ == "__main__" :
     main()
