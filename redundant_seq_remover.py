@@ -9,15 +9,15 @@
 from Bio import SeqIO
 import sys
 
-def parser(istream, ostream) :
-    seen = set() # contains all sequences seen
-    records = [] # contains all SeqIO objects whose sequences are not seen
-    with open(istream, "r") as file :
+def cleaner(infile, outfile) :
+    seen = set() # contains all SeqIO.seq seen
+    records = [] # contains all SeqIO objects whose sequences are not in {seen}
+    with open(infile, "r") as file :
         for record in SeqIO.parse(file, "fasta") :
             if record.seq not in seen :
                 seen.add(record.seq)
                 records.append(record)
-    SeqIO.write(records, ostream, "fasta")
+    SeqIO.write(records, outfile, "fasta") # write file
 
 def main() :
     if len(sys.argv) != 5 :
@@ -27,7 +27,7 @@ def main() :
         print("To use this script, type:")
         print("python3 redundant_seq_remover.py --i <fasta_file_to_clean> --o <fasta_file_cleaned>")
     else :
-        parser(sys.argv[2], sys.argv[4])
+        cleaner(sys.argv[2], sys.argv[4])
         print("Cleaning done.")
 
 if __name__ == "__main__" :
