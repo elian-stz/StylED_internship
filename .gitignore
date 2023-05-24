@@ -1,3 +1,5 @@
 *.fasta
+*.fa
 *.xml
 *.txt
+*.csv
