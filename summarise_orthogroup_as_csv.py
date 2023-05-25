@@ -6,10 +6,10 @@
 # from fasta's header as a csv file for biologists.       #
 #                                                         #
 #  Input: a txt file (named Orthogroups.txt)              #
-#         a fasta file (optional)                         #
-# Output: a csv file                                      #
+# Output: two csv files                                   #
+#               one containing all orthogroups            #
+#               one containing selected orthogroups       #
 ###########################################################
-
 """
 Additional information:
     Orthogroups.txt location: /Results_<date>/Orthogroups/
@@ -62,6 +62,10 @@ def queryNCBI(dictionary) :
     return headers
 
 def makeOutput(list, csvfile) :
+    df = pd.DataFrame(list,
+                      columns = ["orthogroup", "species", "NCBI_ID", "protein_name"]
+                     )
+
     # all stylins identified for Acyrthosiphon pisum
     stylin_protein_ID = ["NP_001155786.1",
                         "NP_001156143.1",
@@ -70,26 +74,26 @@ def makeOutput(list, csvfile) :
                         "NP_001165739.1",
                         "NP_001156724.1"
                         ]
-    df = pd.DataFrame(list,
-                      columns = ["orthogroup", "species", "NCBI_ID", "protein_name"]
-                     )
-    # add an attribute: if NCBI_ID contains the stylin ID, add a 1(True)
+    # add an attribute: if NCBI_ID row contains the stylin ID, add a 1(True)
     df["acypi_identified_stylin"] = df["NCBI_ID"].isin(stylin_protein_ID).astype(int)
     df.to_csv(csvfile, index = False) # write the full table
-    
+
+    #create a subfile containing only orthogroups with A. pisum's identified stylins
     groups = df.loc[df["acypi_identified_stylin"] == 1, "orthogroup"]
     df2 = df[df["orthogroup"].isin(groups.tolist())]
-    df2.to_csv("selected_" + csvfile, index = False) # write the table containing only selected orthogroups
+    df2.to_csv("selected_" + csvfile, index = False) # write the subfile 
 
 def main() :
     if len(sys.argv) != 5 :
         print("This script parses OrthoFinder's output file named Orthogroups.txt")
-        print("It returns a csv file summarising header's data")
+        print("It returns two csv files summarising header's fasta")
         print("The input file is located in /Results_<date>/Orthogroups/ after running OrthoFinder")
         print("Input: a txt file (named Orthogroups.txt)")
-        print("Output: a csv file")
+        print("Output: two csv files")
+        print("        one containing all orthogroups")
+        print("        one containing only selected orthogroups with proteins of interest (identified stylins)")
         print("To run this script, type:")
-        print("python3 summarise_orthogroup_ids.py --i <Orthogroups.txt> --o <csv file>")
+        print("python3", sys.argv[0], "--i <Orthogroups.txt> --o <csv file>")
     else :
         print("Parsing the file")
         data = parseInput(sys.argv[2])
