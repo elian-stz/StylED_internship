@@ -1,0 +1,28 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job      count    min threads    max threads
+-----  -------  -------------  -------------
+blast        1              1              1
+total        1              1              1
+
+Select jobs to execute...
+
+[Wed Jun 21 18:18:47 2023]
+rule blast:
+    output: output_directory
+    jobid: 0
+    resources: tmpdir=/tmp
+
+Terminating processes on user request, this might take some time.
+[Wed Jun 21 18:29:37 2023]
+Error in rule blast:
+    jobid: 0
+    output: output_directory
+    shell:
+        python3 blast.py --i stylin_NCBI_IDs.csv --algorithm blastp --organism Aphididae
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Complete log: /home/strozyk/internship/StylED_internship/pipeline/.snakemake/log/2023-06-21T181846.544688.snakemake.log

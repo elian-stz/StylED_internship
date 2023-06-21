@@ -1,0 +1,15 @@
+rule blast:
+	output:
+		"output_directory"
+	params:
+		file = "stylin_NCBI_IDs.csv",
+		mode = "blastp",
+		organism = "Aphididae"
+	shell:
+		"python3 blast.py --i {params.file} --algorithm {params.mode} --organism {params.organism}"
+
+rule test:
+	output: 
+		"output.txt"
+	shell:
+		"echo 'hello' > {output}"
