@@ -1,11 +1,13 @@
+configfile: "config.yaml"
+
 import os
 import pandas as pd
 import datetime
 
-#file_list_IDs = "stylin_NCBI_IDs_short.csv" # stylin_NCBI_IDs.csv
-#mode = "tblastn"
-#organism = "Aphidini" # Aphidini for shorter query
-local = False
+file_list_IDs = config["csv_file"]
+mode = config["mode"]
+organism = config["organism"]
+DIR = f"{mode}_{organism}"
 
 current_date = datetime.date.today().strftime("%b%d")
 
@@ -19,8 +21,8 @@ match mode :
 	case "blastx" :
 		seq_type = "protein"
 
-with open(file_list_IDs, "r") as csvf :
-	df = pd.read_csv(csvf, sep = ",")
+with open(file_list_IDs, "r") as file :
+	df = pd.read_csv(file, sep = ",")
 	if mode == "blastp" or mode == "tblastn" :
 		ids = df["ncbi_protein_id"].tolist()
 	elif mode == "blastn" or mode == "blastx" :
@@ -28,15 +30,15 @@ with open(file_list_IDs, "r") as csvf :
 
 rule all:
 	input:
-		expand("{mode}_{organism}/Tree_per_orthogroup", mode=mode, organism=organism),
-		expand("{mode}_{organism}/Sequence_number_per_species.txt", mode=mode, organism=organism),
-		expand("{mode}_{organism}/Summary_per_orthogroup.csv", mode=mode, organism=organism),
-		expand("{mode}_{organism}/Summary_per_orthogroup_selected.csv", mode=mode, organism=organism)
+		expand("{DIR}/Tree_per_orthogroup", DIR=DIR),
+		expand("{DIR}/Sequence_number_per_species.txt", DIR=DIR),
+		expand("{DIR}/Summary_per_orthogroup.csv", DIR=DIR),
+		expand("{DIR}/Summary_per_orthogroup_selected.csv", DIR=DIR)
 
 rule run_blast:
 	output:
-		directory = directory(expand("{mode}_{organism}/Fasta_per_input_ID/", mode=mode, organism=organism)),
-		fasta_files = expand("{mode}_{organism}/Fasta_per_input_ID/{id}_{mode}_output.fasta", mode=mode, organism=organism, id=ids)
+		directory = directory(expand("{DIR}/Fasta_per_input_ID/", DIR=DIR)),
+		fasta_files = expand("{DIR}/Fasta_per_input_ID/{id}_{mode}_output.fasta", DIR=DIR, mode=mode, id=ids)
 	params:
 		list_id = ",".join(ids),
 		mode = mode,
@@ -51,7 +53,7 @@ rule concatenate_fasta_files:
 	input:
 		rules.run_blast.output.fasta_files	
 	output:
-		temp(expand("{mode}_{organism}/Fasta_raw/temp", mode=mode, organism=organism))
+		temp(expand("{DIR}/Fasta_raw/temp", DIR=DIR))
 	shell:
 		"""
 		cat {input} > {output}
@@ -61,7 +63,7 @@ rule remove_redundant_sequences:
 	input:
 		rules.concatenate_fasta_files.output	
 	output:
-		expand("{mode}_{organism}/Fasta_raw/whole_{mode}_output.fasta", mode=mode, organism=organism)
+		expand("{DIR}/Fasta_raw/whole_{mode}_output.fasta", DIR=DIR, mode=mode)
 	shell:
 		"""
 		python3 scripts/remove_redundant_sequences.py --i {input} --o {output}
@@ -71,7 +73,7 @@ rule split_fasta_files_by_species:
 	input:
 		rules.remove_redundant_sequences.output
 	output:
-		directory(expand("{mode}_{organism}/Fasta_per_species/", mode=mode, organism=organism))
+		directory(expand("{DIR}/Fasta_per_species/", DIR=DIR))
 	params:
 		seq_type = seq_type
 	shell:
@@ -79,25 +81,25 @@ rule split_fasta_files_by_species:
 		python3 scripts/split_fasta_by_species.py --i {input} --type {params} --outdirectory {output}
 		"""
 
-checkpoint run_orthofinder:
+rule run_orthofinder:
 	input:
 		rules.split_fasta_files_by_species.output
 	output:
-		orthogroup_dir = directory(expand("{mode}_{organism}/Fasta_per_orthogroup", mode=mode, organism=organism)),
-		orthogroups_file = expand("{mode}_{organism}/Orthogroups.txt", mode=mode, organism=organism)
+		orthogroup_dir = directory(expand("{DIR}/Fasta_per_orthogroup", DIR=DIR)),
+		orthogroups_file = expand("{DIR}/Orthogroups.txt", DIR=DIR)
 	params:
 		seq_type = seq_type,
-		orthofinder = "scripts/OrthoFinder/orthofinder",
-		orthogroup_dir = directory(expand("{mode}_{organism}/Fasta_per_species/OrthoFinder/Results_{date}/Orthogroup_Sequences", mode=mode, date=current_date, organism=organism)),
-		OrthogroupsTxt = expand("{mode}_{organism}/Fasta_per_species/OrthoFinder/Results_{date}/Orthogroups/Orthogroups.txt", mode=mode, organism=organism, date=current_date),
-		dir = directory(expand("{mode}_{organism}", mode=mode, organism=organism))
+		orthofinder = "scripts/OrthoFinder/orthofinder.py",
+		orthogroup_dir = directory(expand("{DIR}/Fasta_per_species/OrthoFinder/Results_{date}/Orthogroup_Sequences", DIR=DIR, date=current_date)),
+		OrthogroupsTxt = expand("{DIR}/Fasta_per_species/OrthoFinder/Results_{date}/Orthogroups/Orthogroups.txt", DIR=DIR, date=current_date),
+		dir = directory(expand("{DIR}", DIR=DIR))
 	shell:
 		"""
 		rm -rf {output.orthogroup_dir}
 		if [[ {params.seq_type} = "nucleotide" ]]; then
-			{params.orthofinder} -d -f {input}
+			python3 {params.orthofinder} -og -d -f {input}
 		elif [[ {params.seq_type} = "protein" ]]; then
-			{params.orthofinder} -f {input}
+			python3 {params.orthofinder} -og -f {input}
 		fi
 		cp -r {params.orthogroup_dir} {output.orthogroup_dir}
 		cp {params.OrthogroupsTxt} {params.dir}
@@ -107,7 +109,7 @@ rule run_mafft:
 	input:
 		rules.run_orthofinder.output.orthogroup_dir
 	output:
-		directory(expand("{mode}_{organism}/Fasta_per_orthogroup_aligned", mode=mode, orthogroup="{orthogroup}", organism=organism))
+		directory(expand("{DIR}/Fasta_per_orthogroup_aligned", DIR=DIR))
 	shell:
 		"""
 		mkdir -p {output}
@@ -125,7 +127,7 @@ rule run_iqtree:
 	input:
 		rules.run_mafft.output
 	output:
-		directory(expand("{mode}_{organism}/IQ-TREE_output_per_orthogroup", mode=mode, organism=organism))	
+		directory(expand("{DIR}/IQ-TREE_output_per_orthogroup", DIR=DIR))	
 	params:
 		seq_type = seq_type
 	shell:
@@ -151,7 +153,7 @@ rule rename_tree_leaves:
 		newick_dir = rules.run_iqtree.output,
 		fasta = rules.remove_redundant_sequences.output
 	output:
-		directory(expand("{mode}_{organism}/Tree_per_orthogroup", mode=mode, organism=organism))
+		directory(expand("{DIR}/Tree_per_orthogroup", DIR=DIR))
 	params:
 		seq_type = seq_type,
 		csv = file_list_IDs 
@@ -170,10 +172,10 @@ rule count_sequences_per_species:
 	input:
 		rules.remove_redundant_sequences.output
 	output:
-		expand("{mode}_{organism}/Sequence_number_per_species.txt", mode=mode, organism=organism)
+		expand("{DIR}/Sequence_number_per_species.txt", DIR=DIR)
 	params:
 		seq_type = seq_type,
-		outdir = directory(expand("{mode}_{organism}/", mode=mode, organism=organism))
+		outdir = directory(expand("{DIR}/", DIR=DIR))
 	shell:
 		"""
 		python3 scripts/count_species_sequences.py --i {input} --type {params.seq_type}
@@ -185,12 +187,12 @@ rule summarise_fasta_files:
 		orthogroups = rules.run_orthofinder.output.orthogroups_file,
 		fasta_guide = rules.remove_redundant_sequences.output
 	output:
-		expand("{mode}_{organism}/Summary_per_orthogroup.csv", mode=mode, organism=organism),
-		expand("{mode}_{organism}/Summary_per_orthogroup_selected.csv", mode=mode, organism=organism)
+		expand("{DIR}/Summary_per_orthogroup.csv", DIR=DIR),
+		expand("{DIR}/Summary_per_orthogroup_selected.csv", DIR=DIR)
 	params:
 		seq_type = seq_type,
 		csv = file_list_IDs,
-		dir = directory(expand("{mode}_{organism}", mode=mode, organism=organism))
+		dir = directory(expand("{DIR}", DIR=DIR))
 	shell:
 		"""
 		python3 scripts/summarise_orthogroup_as_csv.py --fasta {input.fasta_guide} --type {params.seq_type} --txt {input.orthogroups} --csv {params.csv}
