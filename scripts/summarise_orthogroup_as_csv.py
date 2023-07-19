@@ -30,10 +30,10 @@ def processFastaHeaders(fasta_file, seq_type) :
                 # NCBI nucleotide fasta header: <ID> (PREDICTED:) <species> <gene_info>
                 if "PREDICTED:" in header :
                     species = " ".join(header[2:4])
-                    name = "PREDICTED: " + " ".join(header[2:])
+                    name = "PREDICTED: " + " ".join(header[4:])
                 else :
                     species = " ".join(header[1:3])
-                    name = " ".join(header[2:])
+                    name = " ".join(header[3:])
             species = species.replace("[","").replace("]","")
             id_header[seq_id] = [seq_id, species, name]
     return id_header

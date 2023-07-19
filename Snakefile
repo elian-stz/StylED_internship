@@ -4,12 +4,12 @@ import os
 import pandas as pd
 import datetime
 
+current_date = datetime.date.today().strftime("%b%d")
+
 file_list_IDs = config["csv_file"]
 mode = config["mode"]
 organism = config["organism"]
-DIR = f"{mode}_{organism}"
-
-current_date = datetime.date.today().strftime("%b%d")
+DIR = f"{current_date}_{mode}_{organism}"
 
 match mode :
 	case "blastp" :
