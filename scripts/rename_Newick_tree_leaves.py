@@ -52,7 +52,7 @@ def addCommonNames(dictionary, csv_file, type_seq) :
     for key in dictionary :
         for id in ID_common_name :
             if key == id :
-               dictionary[key] += f"_{{ID_common_name[id]}}"
+               dictionary[key] += f"_{ID_common_name[id]}"
     return dictionary
 
 def renameLeaves(newick_file, dictionary, outfile) :
