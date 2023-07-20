@@ -4,5 +4,4 @@ scripts/OrthoFinder/
 generate_dag_graph.sh
 blast*
 pipeline_cluster/stylin_NCBI_IDs.csv
-pipeline_cluster/scripts/
 pipeline_cluster/config.yaml
