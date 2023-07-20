@@ -37,7 +37,7 @@ rule all:
 rule run_blast:
 	output:
 		directory = directory(expand("{DIR}/Fasta_per_input_ID/", DIR=DIR)),
-		fasta_files = expand("{DIR}/Fasta_per_input_ID/{id}_{mode}_output.fasta", DIR=DIR, mode=mode, id=ids)
+		fasta_files = expand("{DIR}/Fasta_per_input_ID/{id}_{mode}_output_{list}.fasta", DIR=DIR, mode=mode, id=ids, list=["l1","l2","l3","l4"])
 	params:
 		list_id = ",".join(ids),
 		mode = mode,
